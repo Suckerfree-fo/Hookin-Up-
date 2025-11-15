@@ -1,0 +1,18 @@
+# OS/IDE
+.DS_Store
+.vscode/
+.env
+.env.*
+
+# Node
+node_modules/
+dist/
+build/
+.cache/
+
+# Python (if any)
+__pycache__/
+*.pyc
+.venv/
+.mypy_cache/
+.pytest_cache/
