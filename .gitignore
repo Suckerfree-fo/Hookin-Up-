@@ -16,3 +16,17 @@ __pycache__/
 .venv/
 .mypy_cache/
 .pytest_cache/
+# env & secrets
+*.env
+*.env.*
+.env
+.env.local
+
+# installs / builds / caches
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.prisma/
+**/.turbo/
+**/.cache/

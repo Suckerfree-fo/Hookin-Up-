@@ -1,4 +1,3 @@
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
@@ -6,9 +5,9 @@ generator client {
 
 datasource db {
   provider   = "postgresql"
-  url        = env("DATABASE_URL")
   extensions = [uuidOssp(map: "uuid-ossp"), postgis]
 }
+
 
 // =====================================================
 // ENUMS
@@ -116,15 +115,15 @@ enum KeyType {
 // =====================================================
 
 model User {
-  id            String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  email         String     @unique @db.VarChar(255)
-  phone         String?    @unique @db.VarChar(20)
-  passwordHash  String     @map("password_hash") @db.VarChar(255)
-  role          UserRole   @default(user)
-  status        UserStatus @default(active)
-  lastActive    DateTime   @default(now()) @map("last_active") @db.Timestamptz(6)
-  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id           String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email        String     @unique @db.VarChar(255)
+  phone        String?    @unique @db.VarChar(20)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  role         UserRole   @default(user)
+  status       UserStatus @default(active)
+  lastActive   DateTime   @default(now()) @map("last_active") @db.Timestamptz(6)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relations
   profile                    UserProfile?
@@ -157,22 +156,22 @@ model User {
 }
 
 model UserProfile {
-  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  userId          String    @unique @map("user_id") @db.Uuid
-  firstName       String    @map("first_name") @db.VarChar(50)
+  id              String                                 @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId          String                                 @unique @map("user_id") @db.Uuid
+  firstName       String                                 @map("first_name") @db.VarChar(50)
   age             Int
   gender          Gender?
   location        Unsupported("geography(Point, 4326)")?
-  city            String?   @db.VarChar(100)
-  state           String?   @db.VarChar(100)
-  country         String?   @db.VarChar(100)
-  bio             String?   @db.Text
-  profilePhotoUrl String?   @map("profile_photo_url") @db.Text
-  heightCm        Int?      @map("height_cm")
-  education       String?   @db.VarChar(100)
-  occupation      String?   @db.VarChar(100)
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  city            String?                                @db.VarChar(100)
+  state           String?                                @db.VarChar(100)
+  country         String?                                @db.VarChar(100)
+  bio             String?                                @db.Text
+  profilePhotoUrl String?                                @map("profile_photo_url") @db.Text
+  heightCm        Int?                                   @map("height_cm")
+  education       String?                                @db.VarChar(100)
+  occupation      String?                                @db.VarChar(100)
+  createdAt       DateTime                               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime                               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -208,18 +207,18 @@ model RefreshToken {
 }
 
 model Space {
-  id                     String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  userId                 String           @unique @map("user_id") @db.Uuid
-  bio                    String           @db.Text
-  relationshipIntentions String[]         @map("relationship_intentions") @db.Text
-  interests              String[]         @db.Text
-  lookingFor             String?          @map("looking_for") @db.Text
-  visibility             SpaceVisibility  @default(public)
-  isActive               Boolean          @default(true) @map("is_active")
-  viewCount              Int              @default(0) @map("view_count")
-  favoriteCount          Int              @default(0) @map("favorite_count")
-  createdAt              DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt              DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                     String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId                 String          @unique @map("user_id") @db.Uuid
+  bio                    String          @db.Text
+  relationshipIntentions String[]        @map("relationship_intentions") @db.Text
+  interests              String[]        @db.Text
+  lookingFor             String?         @map("looking_for") @db.Text
+  visibility             SpaceVisibility @default(public)
+  isActive               Boolean         @default(true) @map("is_active")
+  viewCount              Int             @default(0) @map("view_count")
+  favoriteCount          Int             @default(0) @map("favorite_count")
+  createdAt              DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   media     SpaceMedia[]
@@ -272,14 +271,14 @@ model SpaceFavorite {
 }
 
 model ConnectionRequest {
-  id          String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  fromUserId  String                   @map("from_user_id") @db.Uuid
-  toUserId    String                   @map("to_user_id") @db.Uuid
-  message     String?                  @db.Text
-  status      ConnectionRequestStatus  @default(pending)
-  createdAt   DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
-  expiresAt   DateTime                 @default(dbgenerated("(CURRENT_TIMESTAMP + '7 days'::interval)")) @map("expires_at") @db.Timestamptz(6)
-  respondedAt DateTime?                @map("responded_at") @db.Timestamptz(6)
+  id          String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  fromUserId  String                  @map("from_user_id") @db.Uuid
+  toUserId    String                  @map("to_user_id") @db.Uuid
+  message     String?                 @db.Text
+  status      ConnectionRequestStatus @default(pending)
+  createdAt   DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt   DateTime                @default(dbgenerated("(CURRENT_TIMESTAMP + '7 days'::interval)")) @map("expires_at") @db.Timestamptz(6)
+  respondedAt DateTime?               @map("responded_at") @db.Timestamptz(6)
 
   fromUser User @relation("SentRequests", fields: [fromUserId], references: [id], onDelete: Cascade)
   toUser   User @relation("ReceivedRequests", fields: [toUserId], references: [id], onDelete: Cascade)
@@ -383,20 +382,20 @@ model Notification {
 }
 
 model NotificationPreference {
-  id                        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  userId                    String   @unique @map("user_id") @db.Uuid
-  connectionRequestPush     Boolean  @default(true) @map("connection_request_push")
-  connectionRequestEmail    Boolean  @default(true) @map("connection_request_email")
-  connectionAcceptedPush    Boolean  @default(true) @map("connection_accepted_push")
-  connectionAcceptedEmail   Boolean  @default(false) @map("connection_accepted_email")
-  newMessagePush            Boolean  @default(true) @map("new_message_push")
-  newMessageEmail           Boolean  @default(false) @map("new_message_email")
-  spaceFavoritePush         Boolean  @default(true) @map("space_favorite_push")
-  spaceFavoriteEmail        Boolean  @default(false) @map("space_favorite_email")
-  spaceVisitPush            Boolean  @default(false) @map("space_visit_push")
-  spaceVisitEmail           Boolean  @default(false) @map("space_visit_email")
-  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                 DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                      String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId                  String   @unique @map("user_id") @db.Uuid
+  connectionRequestPush   Boolean  @default(true) @map("connection_request_push")
+  connectionRequestEmail  Boolean  @default(true) @map("connection_request_email")
+  connectionAcceptedPush  Boolean  @default(true) @map("connection_accepted_push")
+  connectionAcceptedEmail Boolean  @default(false) @map("connection_accepted_email")
+  newMessagePush          Boolean  @default(true) @map("new_message_push")
+  newMessageEmail         Boolean  @default(false) @map("new_message_email")
+  spaceFavoritePush       Boolean  @default(true) @map("space_favorite_push")
+  spaceFavoriteEmail      Boolean  @default(false) @map("space_favorite_email")
+  spaceVisitPush          Boolean  @default(false) @map("space_visit_push")
+  spaceVisitEmail         Boolean  @default(false) @map("space_visit_email")
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -418,18 +417,18 @@ model DeviceToken {
 }
 
 model Report {
-  id             String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  reporterId     String       @map("reporter_id") @db.Uuid
-  reportedUserId String       @map("reported_user_id") @db.Uuid
-  reason         ReportReason
-  description    String?      @db.Text
-  contentType    String?      @map("content_type") @db.VarChar(50)
-  contentId      String?      @map("content_id") @db.Uuid
-  status         ReportStatus @default(pending)
-  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  resolvedAt     DateTime?    @map("resolved_at") @db.Timestamptz(6)
-  resolvedBy     String?      @map("resolved_by") @db.Uuid
-  resolutionNotes String?     @map("resolution_notes") @db.Text
+  id              String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  reporterId      String       @map("reporter_id") @db.Uuid
+  reportedUserId  String       @map("reported_user_id") @db.Uuid
+  reason          ReportReason
+  description     String?      @db.Text
+  contentType     String?      @map("content_type") @db.VarChar(50)
+  contentId       String?      @map("content_id") @db.Uuid
+  status          ReportStatus @default(pending)
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  resolvedAt      DateTime?    @map("resolved_at") @db.Timestamptz(6)
+  resolvedBy      String?      @map("resolved_by") @db.Uuid
+  resolutionNotes String?      @map("resolution_notes") @db.Text
 
   reporter     User  @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
   reportedUser User  @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
@@ -439,14 +438,14 @@ model Report {
 }
 
 model ModerationAction {
-  id            String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  userId        String                @map("user_id") @db.Uuid
-  actionType    ModerationActionType  @map("action_type")
-  reason        String                @db.Text
-  durationDays  Int?                  @map("duration_days")
-  expiresAt     DateTime?             @map("expires_at") @db.Timestamptz(6)
-  createdBy     String                @map("created_by") @db.Uuid
-  createdAt     DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  id           String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId       String               @map("user_id") @db.Uuid
+  actionType   ModerationActionType @map("action_type")
+  reason       String               @db.Text
+  durationDays Int?                 @map("duration_days")
+  expiresAt    DateTime?            @map("expires_at") @db.Timestamptz(6)
+  createdBy    String               @map("created_by") @db.Uuid
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
 
   user      User @relation("ModeratedUser", fields: [userId], references: [id], onDelete: Cascade)
   moderator User @relation("Moderator", fields: [createdBy], references: [id])
@@ -467,5 +466,3 @@ model UserActivityLog {
 
   @@map("user_activity_log")
 }
-
-

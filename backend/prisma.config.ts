@@ -1,12 +1,15 @@
+import 'dotenv/config'                 // load .env early
 import { defineConfig, env } from 'prisma/config'
 
-type Env = { DATABASE_URL: string }
-
 export default defineConfig({
-  // paths are relative to this working directory (backend/)
+  // paths are relative to this backend/ folder
   schema: 'prisma/schema.prisma',
   migrations: { path: 'prisma/migrations' },
 
-  // Prisma 7: provide datasource url for migrate/CLI
-  datasource: { url: env<Env>('DATABASE_URL') },
+  // Prisma 7: datasource lives in config (URL comes from env)
+  datasource: {
+    name: 'db',
+    provider: 'postgresql',
+    url: env('DATABASE_URL'),
+  },
 })

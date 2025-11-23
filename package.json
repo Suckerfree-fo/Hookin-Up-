@@ -14,14 +14,14 @@
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
-    "docker:up": "docker-compose -f infrastructure/docker/docker-compose.yml up",
-    "docker:down": "docker-compose -f infrastructure/docker/docker-compose.yml down",
+    "docker:up": "docker compose -f infrastructure/docker/docker-compose.yml up",
+    "docker:down": "docker compose -f infrastructure/docker/docker-compose.yml down",
     "setup": "node scripts/setup.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "prettier": "^3.1.0",
-    "eslint": "^8.55.0"
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0"
   },
   "engines": {
     "node": ">=20.0.0",
