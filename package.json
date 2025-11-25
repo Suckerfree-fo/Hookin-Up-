@@ -16,7 +16,9 @@
     "lint": "npm run lint --workspaces",
     "docker:up": "docker compose -f infrastructure/docker/docker-compose.yml up",
     "docker:down": "docker compose -f infrastructure/docker/docker-compose.yml down",
-    "setup": "node scripts/setup.js"
+    "setup": "node scripts/setup.js",
+    "backend:build": "npm run build -w @hookin-up/backend",
+    "backend:serve": "node backend/dist/server.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

@@ -1,39 +1,82 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 
 import geoRoutes from './routes/geo.routes.js';
-import { prisma } from './lib/prisma.js';
+import authRoutes from './routes/auth.routes.js';
+
+dotenv.config();
 
 const app = express();
-
-const allowed = (process.env.CORS_ORIGIN ?? '')
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean);
+const PORT = process.env.PORT || 3000;
 
 app.use(helmet());
 app.use(cors({
-  origin: (origin, cb) => {
-    if (!origin) return cb(null, true); // curl / same-origin
-    return cb(null, allowed.length === 0 || allowed.includes(origin));
-  }
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  credentials: true,
 }));
 app.use(express.json());
 
-// Health
-app.get('/health', async (_req, res) => {
-  try {
-    if (process.env.DATABASE_URL) await prisma.$queryRawUnsafe('SELECT 1');
-    res.json({ status: 'healthy', timestamp: new Date().toISOString(), version: '1.0.0' });
-  } catch {
-    res.status(503).json({ status: 'degraded' });
-  }
+// Simple request log
+app.use((req, _res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
 });
 
-// API
-app.use('/v1/geo', geoRoutes);
+// ---- Login rate limiter (in-memory by default; Redis if REDIS_URL set) ----
+let loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+});
 
-const port = Number(process.env.PORT) || 3000;
-const host = '0.0.0.0';
-app.listen(port, host, () => console.log(`🚀 Server running on http://0.0.0.0:${port}`));
+if (process.env.REDIS_URL) {
+  // Top-level await is fine under NodeNext/ESM
+  const { createClient } = await import('redis');
+  const { RedisStore } = await import('rate-limit-redis');
+  const client = createClient({ url: process.env.REDIS_URL });
+  client.on('error', (e) => console.error('Redis error', e));
+  // don't await connect; redis client will queue commands
+  loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    store: new RedisStore({
+      sendCommand: (...args: string[]) => client.sendCommand(args),
+      prefix: 'rl:login:',
+    }) as any,
+  });
+}
+
+// Health
+app.get('/health', (_req, res) => {
+  res.json({ status: 'healthy', timestamp: new Date().toISOString(), version: '1.0.0' });
+});
+
+// Routes
+app.use('/v1/geo', geoRoutes);
+app.use('/v1/auth/login', loginLimiter); // apply limiter only to login
+app.use('/v1/auth', authRoutes);
+
+// 404
+app.use((_req, res) => {
+  res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Endpoint not found' } });
+});
+
+// Error handler
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    success: false,
+    error: { code: 'INTERNAL_ERROR', message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error' },
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`📍 Environment: ${process.env.NODE_ENV}`);
+});
