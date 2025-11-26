@@ -80,3 +80,18 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV}`);
 });
+
+// --- DEBUG ROUTES (temporary) ---
+app.get('/__debug/version', (_req, res) => {
+  res.json({ version: 'auth-build-1', time: new Date().toISOString() });
+});
+
+app.get('/__debug/routes', (_req, res) => {
+  // @ts-ignore accessing Express internals
+  const stack = (app as any)?._router?.stack || [];
+  const routes = stack
+    .filter((l: any) => l.route?.path)
+    .map((l: any) => ({ path: l.route.path, methods: Object.keys(l.route.methods || {}) }));
+  res.json({ routes });
+});
+// --- END DEBUG ROUTES ---
