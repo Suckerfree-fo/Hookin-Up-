@@ -95,3 +95,4 @@ app.get('/__debug/routes', (_req, res) => {
   res.json({ routes });
 });
 // --- END DEBUG ROUTES ---
+// bump 2025-11-26T14:35:57Z
