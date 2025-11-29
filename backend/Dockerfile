@@ -1,36 +1,36 @@
-# -------- Multi-stage Dockerfile (Node 22 + Prisma 7) for backend/ context --------
-# Build
-FROM node:22-alpine AS build
+# ---- Build stage (Node 22 slim) ----
+FROM node:22-slim AS build
 WORKDIR /app
 ENV NODE_ENV=production
-# Needed for Prisma and native addons (e.g., bcrypt)
-RUN apk add --no-cache openssl python3 make g++
 
-# deps
-COPY package*.json ./
-RUN npm ci
+# Tools for Prisma/bcrypt
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
 
-# prisma + config (Prisma 7: url via prisma.config.ts)
+# Install deps
+COPY package*.json tsconfig.json prisma.config.ts ./
 COPY prisma ./prisma
-COPY prisma.config.ts ./
+RUN npm install
 
-# source
-COPY . .
+# Copy source and build
+COPY src ./src
+RUN npx prisma generate && npm run build
 
-# build TS -> dist
-RUN npm run build
-
-# Runtime
-FROM node:22-alpine AS runtime
+# ---- Runtime stage ----
+FROM node:22-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apk add --no-cache openssl
 
+# OpenSSL for Prisma at runtime
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl \
+  && rm -rf /var/lib/apt/lists/*
+
+# Only runtime artifacts
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/prisma.config.ts ./prisma.config.ts
-COPY --from=build /app/package*.json ./
+COPY package*.json ./
 
 EXPOSE 3000
 CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy --config=./prisma.config.ts && node dist/server.js"]
