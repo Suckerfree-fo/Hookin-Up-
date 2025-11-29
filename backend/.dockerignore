@@ -1,0 +1,12 @@
+# General
+.git
+.github
+**/.env
+**/.env.*
+node_modules
+npm-debug.log
+docker-compose.yml
+
+# Keep only what backend/Dockerfile needs
+# (By default, everything under backend/ is included)
+# DO NOT ignore src/, prisma/, tsconfig.json, package*.json, prisma.config.ts
