@@ -6,7 +6,7 @@ node_modules
 npm-debug.log
 docker-compose.yml
 
-# Keep context lean: include only backend/ inputs required for build
+# Include only backend build inputs in the context
 /*
 !/backend/
 !/backend/package.json
