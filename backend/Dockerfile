@@ -1,26 +1,36 @@
-FROM node:22-alpine AS builder
+# ---- Build stage (Node 22 slim) ----
+FROM node:22-slim AS build
 WORKDIR /app
-COPY package*.json ./
-COPY prisma.config.ts ./
-COPY prisma ./prisma/
-RUN npm ci --include=dev
-COPY . .
-RUN npm run build
-RUN npx prisma generate --config=./prisma.config.ts
-
-FROM node:22-alpine
-WORKDIR /app
-RUN apk add --no-cache dumb-init
-COPY package*.json ./
-RUN npm ci --omit=dev
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 ENV NODE_ENV=production
+
+# Tools for Prisma/bcrypt
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install deps
+COPY package*.json tsconfig.json prisma.config.ts ./
+COPY prisma ./prisma
+RUN npm install
+
+# Copy source and build
+COPY src ./src
+RUN npx prisma generate && npm run build
+
+# ---- Runtime stage ----
+FROM node:22-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+# OpenSSL for Prisma at runtime
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl \
+  && rm -rf /var/lib/apt/lists/*
+
+# Only runtime artifacts
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/prisma.config.ts ./prisma.config.ts
+COPY package*.json ./
+
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
-ENTRYPOINT ["dumb-init","--"]
-CMD ["node","dist/server.js"]
+CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy --config=./prisma.config.ts && node dist/server.js"]

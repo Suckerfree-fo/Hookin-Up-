@@ -1,0 +1,17 @@
+.git
+.github
+**/.env
+**/.env.*
+node_modules
+npm-debug.log
+docker-compose.yml
+
+# Keep context lean: include only backend/ inputs required for build
+/*
+!/backend/
+!/backend/package.json
+!/backend/package-lock.json
+!/backend/tsconfig.json
+!/backend/prisma.config.ts
+!/backend/prisma/**
+!/backend/src/**
