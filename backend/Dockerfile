@@ -12,8 +12,14 @@ COPY package*.json tsconfig.json prisma.config.ts ./
 COPY prisma ./prisma
 RUN npm install
 
-# Copy source and build
+# Copy source
 COPY src ./src
+
+# Provide a dummy DB URL so `prisma generate` can read prisma.config.ts without failing
+ARG DUMMY_DB_URL="postgresql://user:pass@localhost:5432/db?sslmode=disable"
+ENV DATABASE_URL=$DUMMY_DB_URL
+
+# Generate client and build
 RUN npx prisma generate && npm run build
 
 # ---- Runtime stage ----
@@ -33,4 +39,5 @@ COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 COPY package*.json ./
 
 EXPOSE 3000
+# Runtime will use Railway's real DATABASE_URL and JWT_SECRET
 CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy --config=./prisma.config.ts && node dist/server.js"]
