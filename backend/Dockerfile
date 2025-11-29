@@ -1,21 +1,21 @@
 # ---- Build stage (Node 22 slim) ----
 FROM node:22-slim AS build
 WORKDIR /app
-ENV NODE_ENV=production
 
 # Tools for Prisma/bcrypt
 RUN apt-get update -y && apt-get install -y --no-install-recommends openssl python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
 
-# Install deps
+# Install deps (include dev for TypeScript/@types)
+ENV NODE_ENV=development
 COPY package*.json tsconfig.json prisma.config.ts ./
 COPY prisma ./prisma
-RUN npm install
+RUN npm ci || npm install
 
 # Copy source
 COPY src ./src
 
-# Provide a dummy DB URL so `prisma generate` can read prisma.config.ts without failing
+# Provide a dummy DB URL so `prisma generate` (Prisma 7) doesn't fail at build time
 ARG DUMMY_DB_URL="postgresql://user:pass@localhost:5432/db?sslmode=disable"
 ENV DATABASE_URL=$DUMMY_DB_URL
 
