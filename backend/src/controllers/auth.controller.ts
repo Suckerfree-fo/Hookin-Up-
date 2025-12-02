@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
+import { Prisma } from '@prisma/client';
 
 import { hashPassword, comparePassword, validatePasswordStrength } from '../utils/password.js';
 import {
@@ -44,24 +45,17 @@ export async function register(req: Request, res: Response) {
 
     const passwordHash = await hashPassword(password);
 
-    const user = await prisma.user.create({
-      data: {
-        email: normalizedEmail,
-        passwordHash,
-        status: 'active',
-        role: 'user',
-        profile: {
-          create: {
-            firstName: (req.body?.firstName ?? 'Anonymous'),
-            age: (req.body?.age ?? 18),
-            gender: (req.body?.gender ?? null)
-          }
-        }
-      },
-      select: { id: true, email: true, role: true }
-    });
-
-    const accessToken = generateAccessToken(user.id, user.email, user.role || 'user');
+    let user;
+    try {
+      user = await prisma.user.create({
+        data: { email: normalizedEmail, passwordHash, status: 'active', role: 'user' }
+      });
+    } catch (e:any) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        return res.status(409).json({ success:false, error:{ code:'EMAIL_EXISTS', message:'Email already registered' } });
+      }
+      throw e;
+    }const accessToken = generateAccessToken(user.id, user.email, user.role || 'user');
 
     const rawRefresh = generateRefreshToken();
     const refreshTokenHash = hashRefreshToken(rawRefresh);
