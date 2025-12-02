@@ -7,8 +7,8 @@ if (RAW_JWT_SECRET.length < 32) {
 }
 const JWT_SECRET: jwt.Secret = RAW_JWT_SECRET;
 
-export const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || '15m';
-export const REFRESH_TOKEN_TTL = process.env.REFRESH_TOKEN_TTL || '7d';
+export const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || process.env.JWT_EXPIRES_IN || '15m';
+export const REFRESH_TOKEN_TTL = process.env.REFRESH_TOKEN_TTL || process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 
 export interface TokenPayload {
   sub: string;
