@@ -79,10 +79,15 @@ export async function register(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('Register error:', error);
-    return res.status(500).json({
-      success: false,
-      error: { code: 'INTERNAL_ERROR', message: 'Registration failed' }
+    return if ((error as any)?.code === 'P2002') {
+      return res.status(409).json({ success:false, error:{ code:'EMAIL_EXISTS', message:'Email already registered' }});
+    }
+    console.error('Register error details:', {
+      message: (error as any)?.message,
+      code: (error as any)?.code,
+      meta: (error as any)?.meta
     });
+    return res.status(500).json({ success:false, error:{ code:'INTERNAL_ERROR', message:'Registration failed' }});
   }
 }
 
