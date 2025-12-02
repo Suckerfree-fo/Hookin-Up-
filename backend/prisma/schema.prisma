@@ -89,6 +89,7 @@ model UserVerification {
 model RefreshToken {
   id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @map("token_hash") @db.VarChar(64)
   token     String   @unique @db.VarChar(500)
   expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -336,7 +337,6 @@ model UserActivityLog {
   action    String   @db.VarChar(50)
   metadata  Json?
   ipAddress String?  @map("ip_address") @db.Inet
-  userAgent String?  @map("user_agent")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
