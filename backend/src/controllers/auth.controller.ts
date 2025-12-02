@@ -120,10 +120,7 @@ export async function login(req: Request, res: Response) {
     }
 
     // Cleanup expired (best-effort)
-    await prisma.refreshToken.updateMany({
-      where: { userId: user.id, expiresAt: { lt: new Date() }, revoked: false },
-      data: { revoked: true }
-    });
+    await prisma.refreshToken.updateMany({ where: {  userId: user.id,  expiresAt: { lt: new Date() }, revoked: false }, data: { revoked: true } });
 
     const accessToken = generateAccessToken(user.id, user.email, user.role || 'user');
 
