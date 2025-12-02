@@ -26,10 +26,23 @@ export async function register(req: Request, res: Response) {
 
     const passwordHash = await hashPassword(password);
 
-    const user = await prisma.user.create({
-      data: { email: String(email).toLowerCase(), passwordHash },
-      select: { id: true, email: true }
-    });
+    
+const user = await prisma.user.create({
+  data: {
+    email: normalizedEmail,
+    passwordHash,
+    status: "active",
+    role: "user",
+    profile: {
+      create: {
+        firstName: (req.body?.firstName ?? "Anonymous"),
+        age: (req.body?.age ?? 18),
+        gender: (req.body?.gender ?? null)
+      }
+    }
+  },
+  include: { profile: true }
+});
 
     const accessToken = generateAccessToken(user.id, user.email);
     const refreshToken = generateRefreshToken(user.id);

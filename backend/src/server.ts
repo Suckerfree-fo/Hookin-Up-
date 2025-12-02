@@ -1,3 +1,4 @@
+import userRoutes from './routes/user.routes';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -61,6 +62,7 @@ app.get('/health', (_req, res) => {
 app.use('/v1/geo', geoRoutes);
 app.use('/v1/auth/login', loginLimiter); // apply limiter only to login
 app.use('/v1/auth', authRoutes);
+app.use('/v1/users', userRoutes);
 
 // 404
 app.use((_req, res) => {
