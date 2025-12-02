@@ -71,7 +71,7 @@ export async function register(req: Request, res: Response) {
     });
 
     const maxAge = Math.floor((expiresAt.getTime() - Date.now()) / 1000);
-    setRefreshTokenCookie(res, rawRefresh, maxAge);
+    setRefreshTokenCookie(res, refreshToken, maxAge);
 
     return res.status(201).json({
       success: true,
@@ -137,7 +137,7 @@ export async function login(req: Request, res: Response) {
     });
 
     const maxAge = Math.floor((expiresAt.getTime() - Date.now()) / 1000);
-    setRefreshTokenCookie(res, rawRefresh, maxAge);
+    setRefreshTokenCookie(res, refreshToken, maxAge);
 
     return res.json({
       success: true,
