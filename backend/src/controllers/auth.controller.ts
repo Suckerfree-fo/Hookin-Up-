@@ -72,6 +72,7 @@ const user = await prisma.user.create({
 export async function login(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
     if (!email || !password) {
       return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Email and password are required' }});
     }

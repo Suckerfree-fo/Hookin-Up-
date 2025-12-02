@@ -1,4 +1,4 @@
-import userRoutes from './routes/user.routes';
+import userRoutes from './routes/user.routes.js';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
