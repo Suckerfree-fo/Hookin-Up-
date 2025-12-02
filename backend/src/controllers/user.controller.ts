@@ -4,11 +4,19 @@ import { prisma } from '../lib/prisma.js';
 export async function getProfile(req: Request, res: Response) {
   try {
     const userId = (req as any).user!.id;
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { profile: true }
     });
-    if (!user) return res.status(404).json({ success:false, error:{ code:'NOT_FOUND', message:'User not found' }});
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'User not found' }
+      });
+    }
+
     res.json({
       success: true,
       data: {
@@ -24,7 +32,10 @@ export async function getProfile(req: Request, res: Response) {
     });
   } catch (err) {
     console.error('Get profile error:', err);
-    res.status(500).json({ success:false, error:{ code:'INTERNAL_ERROR', message:'Failed to get profile' } });
+    res.status(500).json({
+      success: false,
+      error: { code: 'INTERNAL_ERROR', message: 'Failed to get profile' }
+    });
   }
 }
 
@@ -34,10 +45,16 @@ export async function updateProfile(req: Request, res: Response) {
     const { firstName, bio, occupation, education, heightCm, age, gender } = req.body;
 
     if (bio && bio.length > 500) {
-      return res.status(400).json({ success:false, error:{ code:'VALIDATION_ERROR', message:'Bio max 500 characters' } });
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Bio max 500 characters' }
+      });
     }
     if (age && (age < 18 || age > 120)) {
-      return res.status(400).json({ success:false, error:{ code:'VALIDATION_ERROR', message:'Age must be 18-120' } });
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Age must be 18-120' }
+      });
     }
 
     const profile = await prisma.userProfile.upsert({
@@ -66,7 +83,10 @@ export async function updateProfile(req: Request, res: Response) {
     res.json({ success: true, data: { profile } });
   } catch (err) {
     console.error('Update profile error:', err);
-    res.status(500).json({ success:false, error:{ code:'INTERNAL_ERROR', message:'Failed to update profile' } });
+    res.status(500).json({
+      success: false,
+      error: { code: 'INTERNAL_ERROR', message: 'Failed to update profile' }
+    });
   }
 }
 
@@ -76,28 +96,32 @@ export async function updateLocation(req: Request, res: Response) {
     const { citySlug, radiusKm } = req.body;
 
     if (radiusKm !== undefined && (radiusKm < 5 || radiusKm > 100)) {
-      return res.status(400).json({ success:false, error:{ code:'VALIDATION_ERROR', message:'Radius must be 5-100 km' } });
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Radius must be 5-100 km' }
+      });
     }
 
-    if (citySlug) {
-      const city = await prisma.city.findUnique({ where: { slug: citySlug } });
-      if (!city) {
-        return res.status(404).json({ success:false, error:{ code:'NOT_FOUND', message:'City not found' } });
-      }
-    }
-
-    const user = await prisma.user.update({
+    const updated = await prisma.user.update({
       where: { id: userId },
       data: {
         ...(citySlug !== undefined && { preferredCitySlug: citySlug }),
         ...(radiusKm !== undefined && { searchRadiusKm: radiusKm })
-      },
-      select: { preferredCitySlug: true, searchRadiusKm: true }
+      }
     });
 
-    res.json({ success: true, data: user });
+    res.json({
+      success: true,
+      data: {
+        preferredCitySlug: updated.preferredCitySlug,
+        searchRadiusKm: updated.searchRadiusKm
+      }
+    });
   } catch (err) {
     console.error('Update location error:', err);
-    res.status(500).json({ success:false, error:{ code:'INTERNAL_ERROR', message:'Failed to update location' } });
+    res.status(500).json({
+      success: false,
+      error: { code: 'INTERNAL_ERROR', message: 'Failed to update location' }
+    });
   }
 }

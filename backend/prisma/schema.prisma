@@ -43,6 +43,9 @@ model User {
   activityLogs               UserActivityLog[]
   profile                    UserProfile?
   verifications              UserVerification[]
+  // Preferences
+  preferredCitySlug          String?                 @map("preferred_city_slug")
+  searchRadiusKm             Int?                    @default(25) @map("search_radius_km")
 
   @@map("users")
 }

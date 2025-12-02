@@ -3,71 +3,98 @@ import { prisma } from '../lib/prisma.js';
 import { hashPassword, comparePassword, validatePasswordStrength } from '../utils/password.js';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken, getRefreshTokenExpiry } from '../utils/jwt.js';
 
+
 export async function register(req: Request, res: Response) {
   try {
-    const { email, password, firstName, age } = req.body;
-
-    if (!email || !password || !firstName || typeof age !== 'number') {
-      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'email, password, firstName, age are required' }});
-    }
-    if (age < 18 || age > 120) {
-      return res.status(400).json({ success: false, error: { code: 'AGE_RESTRICTION', message: 'You must be 18 or older to register' }});
-    }
-
-    const strength = validatePasswordStrength(password);
-    if (!strength.valid) {
-      return res.status(400).json({ success: false, error: { code: 'WEAK_PASSWORD', message: strength.error }});
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Email and password required' }
+      });
     }
 
-    const existing = await prisma.user.findUnique({ where: { email: String(email).toLowerCase() }});
+    // normalize BEFORE any use
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Password policy
+    const { validatePasswordStrength } = await import('../utils/password.js');
+    const pwCheck = validatePasswordStrength(password);
+    if (!pwCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'WEAK_PASSWORD', message: pwCheck.error }
+      });
+    }
+
+    // Existing user?
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
-      return res.status(409).json({ success: false, error: { code: 'EMAIL_EXISTS', message: 'Email already registered' }});
+      return res.status(409).json({
+        success: false,
+        error: { code: 'EMAIL_EXISTS', message: 'Email already registered' }
+      });
     }
 
+    const { hashPassword } = await import('../utils/password.js');
     const passwordHash = await hashPassword(password);
 
-    
-const user = await prisma.user.create({
-  data: {
-    email: normalizedEmail,
-    passwordHash,
-    status: "active",
-    role: "user",
-    profile: {
-      create: {
-        firstName: (req.body?.firstName ?? "Anonymous"),
-        age: (req.body?.age ?? 18),
-        gender: (req.body?.gender ?? null)
-      }
-    }
-  },
-  include: { profile: true }
-});
+    // Create user (+ empty profile optional)
+    const user = await prisma.user.create({
+      data: {
+        email: normalizedEmail,
+        passwordHash,
+        status: 'active',
+        role: 'user',
+        profile: {
+          create: {
+            firstName: (req.body?.firstName ?? 'Anonymous'),
+            age: (req.body?.age ?? 18),
+            gender: (req.body?.gender ?? null)
+          }
+        }
+      },
+      include: { profile: true }
+    });
 
-    const accessToken = generateAccessToken(user.id, user.email);
-    const refreshToken = generateRefreshToken(user.id);
+    // Tokens
+    const { generateAccessToken, generateRefreshToken, hashRefreshToken, getRefreshTokenExpiry } = await import('../utils/jwt.js');
+    const accessToken = generateAccessToken(user.id, user.email, user.role);
+    const refreshToken = generateRefreshToken();
+    const refreshTokenHash = hashRefreshToken(refreshToken);
+    const expiresAt = getRefreshTokenExpiry();
 
     await prisma.refreshToken.create({
       data: {
         userId: user.id,
-        token: refreshToken,
-        expiresAt: getRefreshTokenExpiry(),
-        revoked: false,
+        tokenHash: refreshTokenHash,
+        userAgent: req.get('user-agent') || null,
+        ip: (req as any).ip || null,
+        expiresAt
       }
     });
+
+    const { setRefreshTokenCookie } = await import('../utils/cookies.js');
+    const maxAge = Math.floor((expiresAt.getTime() - Date.now()) / 1000);
+    setRefreshTokenCookie(res, refreshToken, maxAge);
 
     return res.status(201).json({
       success: true,
       data: {
-        user: { id: user.id, email: user.email },
-        tokens: { accessToken, refreshToken, expiresIn: 900 }
+        accessToken,
+        user: { id: user.id, email: user.email, profile: user.profile }
       }
     });
-  } catch (err) {
-    console.error('Register error:', err);
-    return res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Registration failed' }});
+
+  } catch (error) {
+    console.error('Register error:', error);
+    return res.status(500).json({
+      success: false,
+      error: { code: 'INTERNAL_ERROR', message: 'Registration failed' }
+    });
   }
 }
+
 
 export async function login(req: Request, res: Response) {
   try {
