@@ -57,17 +57,16 @@ export async function register(req: Request, res: Response) {
       throw e;
     }const accessToken = generateAccessToken(user.id, user.email, user.role || 'user');
 
-    const rawRefresh = generateRefreshToken();
-    const refreshTokenHash = hashRefreshToken(rawRefresh);
+    const refreshToken = generateRefreshToken();
+    const refreshTokenHash = hashRefreshToken(refreshToken);
     const expiresAt = getRefreshTokenExpiry();
 
     await prisma.refreshToken.create({
       data: {
         userId: user.id,
+        token: refreshToken,
         tokenHash: refreshTokenHash,
-        token: refreshTokenHash, // store hash in both; no plaintext
-        expiresAt,
-        revoked: false
+        expiresAt
       }
     });
 
@@ -124,17 +123,16 @@ export async function login(req: Request, res: Response) {
 
     const accessToken = generateAccessToken(user.id, user.email, user.role || 'user');
 
-    const rawRefresh = generateRefreshToken();
-    const refreshTokenHash = hashRefreshToken(rawRefresh);
+    const refreshToken = generateRefreshToken();
+    const refreshTokenHash = hashRefreshToken(refreshToken);
     const expiresAt = getRefreshTokenExpiry();
 
     await prisma.refreshToken.create({
       data: {
         userId: user.id,
+        token: refreshToken,
         tokenHash: refreshTokenHash,
-        token: refreshTokenHash,
-        expiresAt,
-        revoked: false
+        expiresAt
       }
     });
 
