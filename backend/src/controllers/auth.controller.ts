@@ -78,18 +78,36 @@ export async function register(req: Request, res: Response) {
       data: { accessToken, user: { id: user.id, email: user.email } }
     });
   } catch (error) {
-    console.error('Register error:', error);
-    return if ((error as any)?.code === 'P2002') {
-      return res.status(409).json({ success:false, error:{ code:'EMAIL_EXISTS', message:'Email already registered' }});
-    }
-    console.error('Register error details:', {
-      message: (error as any)?.message,
-      code: (error as any)?.code,
-      meta: (error as any)?.meta
+  console.error('Register error:', error);
+
+  if ((error as any)?.code === 'P2002') {
+    return res.status(409).json({
+      success: false,
+      error: {
+        code: 'EMAIL_EXISTS',
+        message: 'Email already registered'
+      }
     });
-    return res.status(500).json({ success:false, error:{ code:'INTERNAL_ERROR', message:'Registration failed' }});
   }
-}
+
+  console.error('Register error details:', {
+    message: (error as any)?.message,
+    code: (error as any)?.code,
+    meta: (error as any)?.meta
+  });
+
+    return res.status(500).json({
+    success: false,
+    error: {
+      code: 'INTERNAL_ERROR',
+      message: 'Registration failed'
+    }
+  });
+}  // closes catch block
+
+}  // 🚨 add this: closes the register function
+
+
 
 export async function login(req: Request, res: Response) {
   try {
