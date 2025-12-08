@@ -6,7 +6,7 @@ const url = process.env.DATABASE_URL || process.env.DATABASE_URL_DIRECT;
 
 if (!url) {
   throw new Error(
-    'Missing DATABASE_URL (or DATABASE_URL_DIRECT). Set DATABASE_URL in Railway variables.'
+    'Missing DATABASE_URL (or DATABASE_URL_DIRECT). Set DATABASE_URL in env vars.'
   );
 }
 
