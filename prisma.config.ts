@@ -1,12 +1,18 @@
-import { defineConfig, env } from 'prisma/config'
+import 'dotenv/config';
+import { defineConfig } from '@prisma/config';
 
-type Env = { DATABASE_URL: string }
+// This uses the same DATABASE_URL your backend uses.
+// It just points to the backend schema from the repo root.
+const url = process.env.DATABASE_URL;
+if (!url) {
+  throw new Error('Missing DATABASE_URL (set it in backend/.env or Railway variables)');
+}
 
 export default defineConfig({
-  // point Prisma to your package's schema & migrations
-  schema: 'backend/prisma/schema.prisma',
-  migrations: { path: 'backend/prisma/migrations' },
-
-  // Prisma 7: provide the URL for migrate/CLI
-  datasource: { url: env<Env>('DATABASE_URL') },
-})
+  // schema path is from the *repo root* here
+  schema: './backend/prisma/schema.prisma',
+  datasource: {
+    provider: 'postgresql',
+    url,
+  },
+});

@@ -1,15 +1,15 @@
-import 'dotenv/config'                 // load .env early
-import { defineConfig, env } from 'prisma/config'
+import 'dotenv/config';
+import { defineConfig } from '@prisma/config';
+
+const url = process.env.DATABASE_URL_DIRECT;
+if (!url) {
+  throw new Error('Missing DATABASE_URL_DIRECT (set it in backend/.env)');
+}
 
 export default defineConfig({
-  // paths are relative to this backend/ folder
-  schema: 'prisma/schema.prisma',
-  migrations: { path: 'prisma/migrations' },
-
-  // Prisma 7: datasource lives in config (URL comes from env)
+  schema: './prisma/schema.prisma',
   datasource: {
-    name: 'db',
     provider: 'postgresql',
-    url: env('DATABASE_URL'),
+    url, // Prisma 7: URL lives here (NOT in schema.prisma)
   },
-})
+});

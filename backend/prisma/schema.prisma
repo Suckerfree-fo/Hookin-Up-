@@ -6,6 +6,7 @@ generator client {
 datasource db {
   provider   = "postgresql"
   extensions = [postgis, uuid_ossp(map: "uuid-ossp")]
+  // no url or directUrl here — they live in prisma.config.ts now
 }
 
 model User {
