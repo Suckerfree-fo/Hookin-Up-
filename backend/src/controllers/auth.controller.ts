@@ -21,6 +21,9 @@ import {
   getRefreshTokenFromCookie
 } from '../utils/cookies.js';
 
+// ------------------------
+// Register
+// ------------------------
 export async function register(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
@@ -29,7 +32,10 @@ export async function register(req: Request, res: Response) {
     if (!normalizedEmail || !password) {
       return res.status(400).json({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'Email and password required' }
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Email and password required'
+        }
       });
     }
 
@@ -37,17 +43,24 @@ export async function register(req: Request, res: Response) {
     if (!pwCheck.valid) {
       return res.status(400).json({
         success: false,
-        error: { code: 'WEAK_PASSWORD', message: pwCheck.error }
+        error: {
+          code: 'WEAK_PASSWORD',
+          message: pwCheck.error
+        }
       });
     }
 
     const existing = await prisma.user.findUnique({
       where: { email: normalizedEmail }
     });
+
     if (existing) {
       return res.status(409).json({
         success: false,
-        error: { code: 'EMAIL_EXISTS', message: 'Email already registered' }
+        error: {
+          code: 'EMAIL_EXISTS',
+          message: 'Email already registered'
+        }
       });
     }
 
@@ -64,10 +77,16 @@ export async function register(req: Request, res: Response) {
         }
       });
     } catch (e: any) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
         return res.status(409).json({
           success: false,
-          error: { code: 'EMAIL_EXISTS', message: 'Email already registered' }
+          error: {
+            code: 'EMAIL_EXISTS',
+            message: 'Email already registered'
+          }
         });
       }
       throw e;
@@ -76,7 +95,7 @@ export async function register(req: Request, res: Response) {
     const accessToken = generateAccessToken(
       user.id,
       user.email,
-      (user as any).role || 'user'
+      user.role || 'user'
     );
 
     const refreshToken = generateRefreshToken();
@@ -88,8 +107,7 @@ export async function register(req: Request, res: Response) {
         userId: user.id,
         token: refreshToken,
         tokenHash: refreshTokenHash,
-        expiresAt,
-        revoked: false
+        expiresAt
       }
     });
 
@@ -98,7 +116,10 @@ export async function register(req: Request, res: Response) {
 
     return res.status(201).json({
       success: true,
-      data: { accessToken, user: { id: user.id, email: user.email } }
+      data: {
+        accessToken,
+        user: { id: user.id, email: user.email }
+      }
     });
   } catch (error: any) {
     console.error('Register error:', error);
@@ -129,6 +150,9 @@ export async function register(req: Request, res: Response) {
   }
 }
 
+// ------------------------
+// Login
+// ------------------------
 export async function login(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
@@ -146,7 +170,13 @@ export async function login(req: Request, res: Response) {
 
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
-      select: { id: true, email: true, passwordHash: true, role: true, status: true }
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        role: true,
+        status: true
+      }
     });
 
     if (!user || user.status !== 'active') {
@@ -170,7 +200,7 @@ export async function login(req: Request, res: Response) {
       });
     }
 
-    // Cleanup expired tokens (best-effort)
+    // Best-effort cleanup of expired tokens
     await prisma.refreshToken.updateMany({
       where: {
         userId: user.id,
@@ -195,8 +225,7 @@ export async function login(req: Request, res: Response) {
         userId: user.id,
         token: refreshToken,
         tokenHash: refreshTokenHash,
-        expiresAt,
-        revoked: false
+        expiresAt
       }
     });
 
@@ -205,17 +234,26 @@ export async function login(req: Request, res: Response) {
 
     return res.json({
       success: true,
-      data: { accessToken, user: { id: user.id, email: user.email } }
+      data: {
+        accessToken,
+        user: { id: user.id, email: user.email }
+      }
     });
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({
       success: false,
-      error: { code: 'INTERNAL_ERROR', message: 'Login failed' }
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Login failed'
+      }
     });
   }
 }
 
+// ------------------------
+// Refresh token
+// ------------------------
 export async function refreshTokenHandler(req: Request, res: Response) {
   try {
     const raw = getRefreshTokenFromCookie(req);
@@ -233,7 +271,11 @@ export async function refreshTokenHandler(req: Request, res: Response) {
 
     const stored = await prisma.refreshToken.findFirst({
       where: { tokenHash },
-      include: { user: { select: { id: true, email: true, role: true } } }
+      include: {
+        user: {
+          select: { id: true, email: true, role: true }
+        }
+      }
     });
 
     if (!stored) {
@@ -281,8 +323,8 @@ export async function refreshTokenHandler(req: Request, res: Response) {
     await prisma.refreshToken.create({
       data: {
         userId: stored.userId,
-        token: newRaw,
         tokenHash: newHash,
+        token: newRaw,
         expiresAt: newExpires,
         revoked: false
       }
@@ -302,7 +344,10 @@ export async function refreshTokenHandler(req: Request, res: Response) {
     const maxAge = Math.floor((newExpires.getTime() - Date.now()) / 1000);
     setRefreshTokenCookie(res, newRaw, maxAge);
 
-    return res.json({ success: true, data: { accessToken } });
+    return res.json({
+      success: true,
+      data: { accessToken }
+    });
   } catch (error) {
     console.error('Refresh token error:', error);
     return res.status(500).json({
@@ -315,6 +360,9 @@ export async function refreshTokenHandler(req: Request, res: Response) {
   }
 }
 
+// ------------------------
+// Logout
+// ------------------------
 export async function logout(req: Request, res: Response) {
   try {
     const raw = getRefreshTokenFromCookie(req);
@@ -327,7 +375,10 @@ export async function logout(req: Request, res: Response) {
     }
 
     clearRefreshTokenCookie(res);
-    return res.json({ success: true, message: 'Logged out successfully' });
+    return res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
   } catch (error) {
     console.error('Logout error:', error);
     return res.status(500).json({
@@ -340,9 +391,13 @@ export async function logout(req: Request, res: Response) {
   }
 }
 
+// ------------------------
+// Current user
+// ------------------------
 export async function getCurrentUser(req: Request, res: Response) {
   try {
     const userId = (req as any).user!.id;
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -364,7 +419,10 @@ export async function getCurrentUser(req: Request, res: Response) {
       });
     }
 
-    return res.json({ success: true, data: user });
+    return res.json({
+      success: true,
+      data: user
+    });
   } catch (error) {
     console.error('Get user error:', error);
     return res.status(500).json({
