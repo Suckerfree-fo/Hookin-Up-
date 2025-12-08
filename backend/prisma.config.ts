@@ -1,9 +1,13 @@
 import 'dotenv/config';
 import { defineConfig } from '@prisma/config';
 
-const url = process.env.DATABASE_URL_DIRECT;
+// Prefer pooled DATABASE_URL; fall back to DIRECT if present
+const url = process.env.DATABASE_URL || process.env.DATABASE_URL_DIRECT;
+
 if (!url) {
-  throw new Error('Missing DATABASE_URL_DIRECT (set it in backend/.env)');
+  throw new Error(
+    'Missing DATABASE_URL (or DATABASE_URL_DIRECT). Set DATABASE_URL in Railway variables.'
+  );
 }
 
 export default defineConfig({
