@@ -41,7 +41,9 @@ if (process.env.REDIS_URL) {
   const { RedisStore } = await import('rate-limit-redis');
   const client = createClient({ url: process.env.REDIS_URL });
   client.on('error', (e) => console.error('Redis error', e));
-  // don't await connect; redis client will queue commands
+  await client.connect();
+  console.log('✅ Redis connected successfully');
+  
   loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 10,
