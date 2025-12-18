@@ -1,0 +1,45 @@
+{
+  "name": "Development Container",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  
+  // Configure tool-specific properties
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+      },
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  },
+  
+  // Use 'forwardPorts' to make a list of ports inside the container available locally
+  "forwardPorts": [3000, 5000, 8000, 8080],
+  
+  // Use 'postCreateCommand' to run commands after the container is created
+  "postCreateCommand": "echo 'Container created successfully!'",
+  
+  // Comment out to connect as root instead
+  "remoteUser": "codespace",
+  
+  // Set environment variables
+  "containerEnv": {
+    "TZ": "UTC"
+  },
+  
+  // Configure container features
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  }
+}
